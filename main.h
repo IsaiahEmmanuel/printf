@@ -1,140 +1,120 @@
-#include "main.h"
+#ifndef _MAIN_H_
+#define _MAIN_H_
+
+#include <stdarg.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <limits.h>
+#include <stdlib.h>
+
+#define OUTPUT_BUF_SIZE 1024
+#define BUF_FLUSH -1
+
+#define FIELD_BUF_SIZE 50
+
+#define NULL_STRING "(null)"
+
+#define PARAMS_INIT {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+#define CONVERT_LOWERCASE	1
+#define CONVERT_UNSIGNED	2
 
 /**
- * get_specifier - finds the format function
- * @s: string of the format
- * Return: the number of bytes printed
+ * struct parameters - parameters struct
+ *
+ * @unsign: flag if unsigned value
+ *
+ * @plus_flag: on if plus_flag specified
+ * @space_flag: on if hashtag_flag specified
+ * @hashtag_flag: on if _flag specified
+ * @zero_flag: on if _flag specified
+ * @minus_flag: on if _flag specified
+ *
+ * @width: field width specified
+ * @precision: field precision specified
+ *
+ * @h_modifier: on if h_modifier is specified
+ * @l_modifier: on if l_modifier is specified
+ *
  */
 
-int (*get_specifier(char *s))(va_list ap, params_t *params)
-
+typedef struct parameters
 {
-	specifier_t specifiers[] = {
-		{"c", print_char},
-		{"d", print_int},
-		{"i", print_int},
-		{"s", print_string},{"%", print_percent},
-		{"b", print_binary},
-		{"o", print_octal},
-		{"u", print_unsigned},
-		{"x", print_hex},
-		{"X", print_HEX},
-		{"p", print_address},
-		{"S", print_S},
-		{"r", print_rev},
-		{"R", print_rot13},
-		{NULL, NULL}
-	};
+	unsigned int unsign			: 1;
 
-	int i = 0;
+	unsigned int plus_flag		: 1;
+	unsigned int space_flag		: 1;
+	unsigned int hashtag_flag	: 1;
+	unsigned int zero_flag		: 1;
+	unsigned int minus_flag		: 1;
 
-	while (specifiers[i].specifier)
-	{
-		if (*s == specifiers[i].specifier[0])
-		{
-			return (specifiers[i].f);
-		}
-		i++;
-	}
-	return (NULL);
-}
+	unsigned int width;
+	unsigned int precision;
+
+	unsigned int h_modifier		: 1;
+	unsigned int l_modifier		: 1;
+} params_t;
 
 /**
- * get_print_func - finds the format function
- * @s: string of the format
- * @ap: argument pointer
- * @params: the parameters struct
- * Return: the number of bytes printed
+ * struct specifier - Struct token
+ *
+ * @specifier: format token
+ * @f: The function associated
  */
-
-int get_print_func(char *s, va_list ap, params_t *params)
+typedef struct specifier
 {
-	int (*f)(va_list, params_t *) = get_specifier(s);
+	char *specifier;
+	int (*f)(va_list, params_t *);
+} specifier_t;
 
-	if (f)
-		return (f(ap, params));
-	return (0);
-}
+/* _put.c module */
+int _puts(char *str);
+int _putchar(int c);
 
-/**
- * get_flag - finds the flag functions
- * @s: the format string
- * @params: the parameters struct
- * Return: if flag was valid
- */
+/* print_functions.c module */
+int print_char(va_list ap, params_t *params);
+int print_int(va_list ap, params_t *params);
+int print_string(va_list ap, params_t *params);
+int print_percent(va_list ap, params_t *params);
+int print_S(va_list ap, params_t *params);
 
-int get_flag(char *s, params_t *params)
+/* number.c module */
+char *convert(long int num, int base, int flags, params_t *params);
+int print_unsigned(va_list ap, params_t *params);
+int print_address(va_list ap, params_t *params);
 
-{
-	int i = 0;
+/* specifier.c module */
+int (*get_specifier(char *s))(va_list ap, params_t *params);
+int get_print_func(char *s, va_list ap, params_t *params);
+int get_flag(char *s, params_t *params);
+int get_modifier(char *s, params_t *params);
+char *get_width(char *s, params_t *params, va_list ap);
 
-	switch (*s)
-	{
-		case '+':
-			i = params->plus_flag = 1;
-			break;
-		case ' ':
-			i = params->space_flag = 1;
-			break;
-		case '#':
-			i = params->hashtag_flag = 1;
-			break;
-		case '-':
-			i = params->minus_flag = 1;
-			break;
-		case '0':
-			i = params->zero_flag = 1;
-			break;
-	}
-	return (i);
-}
+/* convert_number.c module */
+int print_hex(va_list ap, params_t *params);
+int print_HEX(va_list ap, params_t *params);
+int print_binary(va_list ap, params_t *params);
+int print_octal(va_list ap, params_t *params);
 
-/**
- * get_modifier - finds the modifier function
- * @s: string for format
- * @params: parameter structure
- * Return: if modifier was valid
- */
+/* simple_printers.c module */
+int print_from_to(char *start, char *stop, char *except);
+int print_rev(va_list ap, params_t *params);
+int print_rot13(va_list ap, params_t *params);
 
-int get_modifier(char *s, params_t *params)
-{
-	int i = 0;
+/* print_number.c module */
+int _isdigit(int c);
+int _strlen(char *s);
+int print_number(char *str, params_t *params);
+int print_number_right_shift(char *str, params_t *params);
+int print_number_left_shift(char *str, params_t *params);
 
-	switch (*s)
-	{
-		case 'h':
-			i = params->h_modifier = 1;
-			break;
-		case 'l':
-		       i = params->l_modifier = 1;
-		       break;
-	}
-	return (i);
-}
+/* params.c module */
+void init_params(params_t *params, va_list ap);
 
-/**
- * get_width - gets the width from the format string
- * @s: the format string
- * @params: the parameters struct
- * @ap: the argument pointer
- * Return: new pointer
- */
+/* string_fields.c modoule */
+char *get_precision(char *p, params_t *params, va_list ap);
 
-char *get_width(char *s, params_t *params, va_list ap)
-	/* should this function use char **s and modify the pointer? */
-{
-	int d = 0;
+/* _prinf.c module */
+int _printf(const char *format, ...);
 
-	if (*s == '*')
-	{
-		d = va_arg(ap, int);
-		s++;
-	}
-	else
-	{
-		while (_isdigit(*s))
-			d = d * 10 + (*s++ - '0');
-	}
-	params->width = d;
-	return (s);
-}
+#endif /*_MAIN_H_*/
